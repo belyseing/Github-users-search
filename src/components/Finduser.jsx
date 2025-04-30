@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { CiSearch } from "react-icons/ci";
 import { FaMapMarkerAlt, FaLink, FaTwitter } from "react-icons/fa";
 import { HiBuildingOffice2 } from "react-icons/hi2";
@@ -6,11 +6,15 @@ import { MdSunny } from "react-icons/md";
 import { FaMoon } from "react-icons/fa";
 
 export default function FindUser() {
-  const [userName, setUserName] = useState("");
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const savedMode = localStorage.getItem("darkMode");
+    return savedMode === "true";
+  });
+
+  const userName = useRef();
 
   const fetchUserData = async (username) => {
     setLoading(true);
@@ -31,14 +35,9 @@ export default function FindUser() {
   };
 
   const handleSearch = () => {
-    if (userName.trim()) {
-      fetchUserData(userName);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter" && userName.trim()) {
-      fetchUserData(userName);
+    const EnteredUserName = userName.current.value;
+    if (EnteredUserName.trim()) {
+      fetchUserData(EnteredUserName);
     }
   };
 
@@ -51,13 +50,19 @@ export default function FindUser() {
     })}`;
   };
 
+  useEffect(() => {
+    fetchUserData("octocat");
+  }, []);
+
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem("darkMode", newMode);
   };
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
+      className={`min-h-screen flex items-center justify-center ${
         darkMode ? "bg-slate-900 text-white" : "bg-blue-50 text-black"
       }`}
     >
@@ -100,9 +105,7 @@ export default function FindUser() {
           <input
             type="text"
             placeholder="Search GitHub username..."
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-            onKeyPress={handleKeyPress}
+            ref={userName}
             className={`py-4 pl-16 pr-28 shadow-lg rounded-lg focus:outline-none w-full  ${
               darkMode
                 ? "bg-slate-800 border-gray-600 text-white placeholder-gray-100 focus:ring-2 focus:ring-slate-700"
@@ -114,7 +117,7 @@ export default function FindUser() {
             <button
               onClick={handleSearch}
               className={`bg-blue-500 text-white px-4 py-2 rounded-lg text-sm ${
-                userName.trim() && !error
+                userName.current?.value.trim() && !error
                   ? "cursor-not-allowed opacity-60"
                   : "hover:bg-blue-400 "
               }`}
